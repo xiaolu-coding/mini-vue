@@ -6,6 +6,8 @@ class RefImpl {
   private _value: any
   public dep
   private _rawValue: any
+  // 判断是不是ref得标记
+  public __v_isRef = true
   constructor(value) {
     // 为了防止是对象相比，再保存一份
     this._rawValue = value
@@ -43,4 +45,14 @@ function trackRefValue(ref) {
 
 export function ref(value) {
   return new RefImpl(value)
+}
+
+export function isRef(ref) {
+  // 如果没有的情况肯定是undefined，因此要!!转
+  return !!ref.__v_isRef
+}
+
+export function unRef(ref) {
+  // 看看是不是ref对象，如果是，返回value，不是，返回本身
+  return isRef(ref) ? ref.value : ref
 }
