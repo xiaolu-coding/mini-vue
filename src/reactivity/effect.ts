@@ -5,7 +5,7 @@ let activeEffect
 // 用来判断是否收集依赖的全局变量
 let shouldTrack
 
-class reactiveEffect {
+export class reactiveEffect {
   private _fn: any
   deps = []
   active: boolean = true

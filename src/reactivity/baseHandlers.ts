@@ -18,7 +18,7 @@ function createGetter(isReadOnly = false, shallow = false) {
       return isReadOnly
     }
     const res = Reflect.get(target, key)
-    // 如果是浅响应式，直接返回
+    // 如果是浅响应式，直接返回 
     if(shallow) {
       return res
     }
