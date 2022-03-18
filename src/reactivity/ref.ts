@@ -52,7 +52,26 @@ export function isRef(ref) {
   return !!ref.__v_isRef
 }
 
+
 export function unRef(ref) {
   // 看看是不是ref对象，如果是，返回value，不是，返回本身
   return isRef(ref) ? ref.value : ref
+}
+
+export function proxyRefs(objectWithRef) {
+  return new Proxy(objectWithRef, {
+    get(target, key) {
+      // 将get的值经过unRef后返回
+      return unRef(Reflect.get(target, key))
+    },
+    set(target, key, newValue) {
+      // 如果是ref类型，并且新值不是ref
+      if(isRef(target[key]) && !isRef(newValue )) {
+        // 要value
+        return target[key].value = newValue
+      } else {
+        return Reflect.set(target, key, newValue)
+      }
+    }
+  })
 }
