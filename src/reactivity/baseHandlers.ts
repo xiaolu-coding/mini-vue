@@ -1,20 +1,26 @@
 import { track, trigger } from "./effect"
 import { reactive, ReactiveFlags, readonly } from "./reactive"
-import { isObject } from "../shared"
+import { extend, isObject } from "../shared"
 // 直接初始化，后面直接用，优化了，不需要每次都重新返回get
 const get = createGetter()
 const set = createSetter()
 const readonlyGet = createGetter(true)
+const shallowReadonlyGet = createGetter(true, true)
 
-function createGetter(isReadOnly = false) {
+function createGetter(isReadOnly = false, shallow = false) {
   return function get(target, key) {
-    const res = Reflect.get(target, key)
+    
     // 如果是isReactive触发的get，返回!isReadonly
     if (key === ReactiveFlags.IS_REACTIVE) {
       return !isReadOnly
     } else if(key === ReactiveFlags.IS_READONLY) {
       // 如果是irReadonly触发的get，返回isReadonly
       return isReadOnly
+    }
+    const res = Reflect.get(target, key)
+    // 如果是浅响应式，直接返回
+    if(shallow) {
+      return res
     }
     // 如果res是对象，递归去reactive
     if(isObject(res)) {
@@ -52,3 +58,8 @@ export const readonlyHandlers = {
     return true
   },
 }
+
+// 修改readonlyhanlders的get为shallowReadonlyGet
+export const shallowReadonlyHandlers = extend({}, readonlyHandlers, {
+  get: shallowReadonlyGet
+})
