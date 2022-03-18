@@ -51,7 +51,7 @@ function cleanupEffect(effect) {
   effect.deps.length = 0
 }
 
-function isTracking() {
+export function isTracking() {
   // 是否需要收集依赖，stop里面的get set ++操作
   // if (!shouldTrack) return
   // 如果没有effect，就不需要收集
@@ -80,6 +80,10 @@ export function track(target, key) {
     dep = new Set()
     depsMap.set(key, dep)
   }
+  trackEffects(dep)
+}
+
+export function trackEffects(dep) {
   // 如果dep中已经有同样的effect 返回
   if (dep.has(activeEffect)) return
   // 添加依赖，activeEffect是全局变量保存的effect实例
@@ -88,9 +92,7 @@ export function track(target, key) {
   activeEffect.deps.push(dep)
 }
 
-export function trigger(target, key) {
-  let depsMap = targetMap.get(target)
-  let dep = depsMap.get(key)
+export function triggerEffects(dep) {
   // 遍历拿到dep中的effect实例，执行实例的run方法去执行fn
   for (const effect of dep) {
     // 如果有scheduler，执行scheduler
@@ -102,9 +104,15 @@ export function trigger(target, key) {
   }
 }
 
+export function trigger(target, key) {
+  let depsMap = targetMap.get(target)
+  let dep = depsMap.get(key)
+  // 触发依赖
+  triggerEffects(dep)
+}
+
 export function effect(fn, options: any = {}) {
   // fn是函数
-
   const _effect = new reactiveEffect(fn, options.scheduler)
   // 通过Object.assign将otpions放进来
   extend(_effect, options)
