@@ -54,18 +54,18 @@ function mountChildren(vnode, container) {
   })
 }
 
-function mountComponent(vnode, container) {
+function mountComponent(initialVnode, container) {
   // 1. 创建组件实例，用以存储各种属性 createComponentInstance
   // 2. 初始化组件实例 setupComponent
   // 3. 副作用函数挂载 setupRenderEffect
-  const instance = createComponentInstance(vnode)
+  const instance = createComponentInstance(initialVnode)
   // 初始化组件实例
   setupComponent(instance)
 
-  setupRenderEffect(instance, vnode, container)
+  setupRenderEffect(instance, initialVnode, container)
 }
 
-function setupRenderEffect(instance: any, vnode, container) {
+function setupRenderEffect(instance: any, initialVnode, container) {
   // 取出代理对象
   const {proxy} = instance
   // 调用render函数 subTree就是vnode树 
@@ -75,5 +75,5 @@ function setupRenderEffect(instance: any, vnode, container) {
   patch(subTree, container)
 
   // 所有的element mount之后 这时候的subTree就是根组件了
-  vnode.el = subTree.el
+  initialVnode.el = subTree.el
 }

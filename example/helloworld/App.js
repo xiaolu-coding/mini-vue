@@ -1,5 +1,5 @@
 
-import { h } from '../../../lib/mini-vue.esm.js'
+import { h } from '../../lib/mini-vue.esm.js'
 
 window.self = null
 export const App = {
