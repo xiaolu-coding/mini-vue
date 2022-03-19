@@ -11,7 +11,7 @@ export const App = {
     // string
     // "hi, mini-vue"
     // array
-    [h("p", {class: "red"}, "hi"), h("p", {class: "blue"}, "mini-vue")]
+    [h("p", {class: "red"}, "hi"+ this.msg), h("p", {class: "blue"}, "mini-vue")]
     )
   },
 

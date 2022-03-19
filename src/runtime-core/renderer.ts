@@ -65,8 +65,11 @@ function mountComponent(vnode, container) {
 }
 
 function setupRenderEffect(instance: any, container) {
-  // 调用render函数 subTree就是vnode树
-  const subTree = instance.render()
+  // 取出代理对象
+  const {proxy} = instance
+  // 调用render函数 subTree就是vnode树 
+  // 将this指向代理对象，因此this.msg可用
+  const subTree = instance.render.call(proxy)
   // 再patch递归
   patch(subTree, container)
 }
