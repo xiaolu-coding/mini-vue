@@ -27,7 +27,8 @@ function processElement(vnode, container) {
 
 function mountElement(vnode, container) {
   const { type, props, children } = vnode
-  const el = document.createElement(type)
+  // 将el存一份在vnode上，以便$el访问
+  const el = (vnode.el = document.createElement(type))
   // children 可能是string ,array
   // 如果是string，
   if (typeof children === "string") {
@@ -61,10 +62,10 @@ function mountComponent(vnode, container) {
   // 初始化组件实例
   setupComponent(instance)
 
-  setupRenderEffect(instance, container)
+  setupRenderEffect(instance, vnode, container)
 }
 
-function setupRenderEffect(instance: any, container) {
+function setupRenderEffect(instance: any, vnode, container) {
   // 取出代理对象
   const {proxy} = instance
   // 调用render函数 subTree就是vnode树 
@@ -72,4 +73,7 @@ function setupRenderEffect(instance: any, container) {
   const subTree = instance.render.call(proxy)
   // 再patch递归
   patch(subTree, container)
+
+  // 所有的element mount之后 这时候的subTree就是根组件了
+  vnode.el = subTree.el
 }

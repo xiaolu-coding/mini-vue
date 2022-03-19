@@ -1,3 +1,5 @@
+import { PublicInstanceProxyHandlers } from "./componentPublicInstance"
+
 // 创建组件实例对象
 export function createComponentInstance(vnode) {
   const component = {
@@ -19,16 +21,10 @@ export function setupComponent(instance) {
 function setupStatefulComponent(instance: any) {
   // 通过实例的vnode获取type，type就是对象的内容
   const component = instance.type
-  // ctx
-  instance.proxy = new Proxy({}, {
-    get(target, key) {
-      // setupState 解构出 进行代理
-      const { setupState } = instance
-      if(key in setupState) {
-        return setupState[key]
-      }
-    }
-  })
+  // ctx proxy代理对象，把instance传过去 PublicInstanceProxyHandlers
+  instance.proxy = new Proxy({
+    _: instance
+  }, PublicInstanceProxyHandlers)
   // 解构出setup
   const { setup } = component
   // 如果有setup
