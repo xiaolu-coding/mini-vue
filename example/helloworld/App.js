@@ -9,6 +9,12 @@ export const App = {
     return h('div', {
       id: 'root',
       class: ["red", "hard"],
+      onClick() {
+        console.log('click')
+      },
+      onMouseDown() {
+        console.log('onmouseDown')
+      }
     },
     // string
     // "hi, mini-vue"

@@ -42,9 +42,14 @@ function mountElement(vnode, container) {
     // 如果是数组 遍历数组，进行patch，此时容器为el
     mountChildren(vnode, el)
   }
-  // 遍历设置属性
+  // 遍历设置属性 还要对里面的方法进行处理
   for (const key in props) {
     const val = props[key]
+    const isOn = (key: string) => /^on[A-Z]/.test(key)
+    if (isOn(key)) {
+      const event = key.slice(2).toLowerCase()
+      el.addEventListener(event, val)
+    }
     el.setAttribute(key, val)
   }
   container.append(el)
