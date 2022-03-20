@@ -1,5 +1,6 @@
 import { createComponentInstance, setupComponent } from "./component"
 import { isObject } from "../shared/index"
+import { ShapeFlags } from "../shared/ShapeFlags"
 
 export function render(vnode, container) {
   // 调用patch
@@ -7,11 +8,14 @@ export function render(vnode, container) {
 }
 
 function patch(vnode, container) {
-  // todo 要先判断类型，再做处理
-  if (typeof vnode.type === "string") {
+  // 结构出shapeFlag
+  const { shapeFlag } = vnode
+  // 通过&运算查找，看看是否是ElEMENT类型
+  if (shapeFlag & ShapeFlags.ELEMENT) {
     // 如果是element
     processElement(vnode, container)
-  } else if (isObject(vnode.type)) {
+  } else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
+    // 通过&运算查找，看看是否是STATEFUL_COMPONENT类型
     // 处理组件
     processComponent(vnode, container)
   }
@@ -26,16 +30,15 @@ function processElement(vnode, container) {
 }
 
 function mountElement(vnode, container) {
-  const { type, props, children } = vnode
+  const { type, props, children, shapeFlag } = vnode
   // 将el存一份在vnode上，以便$el访问
   const el = (vnode.el = document.createElement(type))
   // children 可能是string ,array
-  // 如果是string，
-  if (typeof children === "string") {
-    // 赋值
+  // 通过&运算查找，如果是TEXT_CHILDREN类型
+  if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
     el.textContent = children
-    
-  } else if (Array.isArray(children)) {
+  } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+    // 通过&运算查找，如果是ARRAY_CHILDREN类型
     // 如果是数组 遍历数组，进行patch，此时容器为el
     mountChildren(vnode, el)
   }
@@ -49,7 +52,7 @@ function mountElement(vnode, container) {
 
 function mountChildren(vnode, container) {
   //  循环挂载孩子
-   vnode.children.forEach((v) => {
+  vnode.children.forEach((v) => {
     patch(v, container)
   })
 }
@@ -67,8 +70,8 @@ function mountComponent(initialVnode, container) {
 
 function setupRenderEffect(instance: any, initialVnode, container) {
   // 取出代理对象
-  const {proxy} = instance
-  // 调用render函数 subTree就是vnode树 
+  const { proxy } = instance
+  // 调用render函数 subTree就是vnode树
   // 将this指向代理对象，因此this.msg可用
   const subTree = instance.render.call(proxy)
   // 再patch递归
