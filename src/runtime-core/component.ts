@@ -1,4 +1,5 @@
 import { shallowReadonly } from "../reactivity/reactive"
+import { emit } from "./componentEmit"
 import { initProps } from "./componentProps"
 import { PublicInstanceProxyHandlers } from "./componentPublicInstance"
 
@@ -8,8 +9,11 @@ export function createComponentInstance(vnode) {
     vnode,
     type: vnode.type, // 代理了一下
     setupState: {},
-    props: {},
+    props: {},   
+    emit: () => {},
   }
+  // 将emit函数赋值给组件实例的emit 将compoent作为第一个参数传过去
+  component.emit = emit.bind(null, component) as any
   return component
 }
 
@@ -35,7 +39,10 @@ function setupStatefulComponent(instance: any) {
   if(setup) {
     // 调用setup，并将返回值给setupResult  
     // 传入浅只读的Props,可以在setup中得到这个参数
-    const setupResult = setup(shallowReadonly(instance.props))
+    // 传入emit
+    const setupResult = setup(shallowReadonly(instance.props), {
+      emit: instance.emit
+    })
     // 对结果判断，可能是函数可能是对象,object,function
     handleSetupResult(instance, setupResult)
   }

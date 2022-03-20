@@ -1,5 +1,5 @@
 import { createComponentInstance, setupComponent } from "./component"
-import { isObject } from "../shared/index"
+import { isOn } from "../shared/index"
 import { ShapeFlags } from "../shared/ShapeFlags"
 
 export function render(vnode, container) {
@@ -45,9 +45,10 @@ function mountElement(vnode, container) {
   // 遍历设置属性 还要对里面的方法进行处理
   for (const key in props) {
     const val = props[key]
-    const isOn = (key: string) => /^on[A-Z]/.test(key)
     if (isOn(key)) {
+      // 将on后面的转小写
       const event = key.slice(2).toLowerCase()
+      // 添加事件
       el.addEventListener(event, val)
     }
     el.setAttribute(key, val)
