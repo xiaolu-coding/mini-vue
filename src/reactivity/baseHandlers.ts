@@ -1,6 +1,6 @@
 import { track, trigger } from "./effect"
 import { reactive, ReactiveFlags, readonly } from "./reactive"
-import { extend, isObject } from "../shared"
+import { extend, isObject } from "../shared/index"
 // 直接初始化，后面直接用，优化了，不需要每次都重新返回get
 const get = createGetter()
 const set = createSetter()
