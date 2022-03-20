@@ -3,6 +3,8 @@ import { hasOwn } from "../shared/index"
 const publicPropertiesMap = {
   // 如果Key是$el，返回el
   $el: (instance) => instance.vnode.el,
+  // 如果Key是$slots，返回slots
+  $slots: (instance) => instance.slots
 }
 
 export const PublicInstanceProxyHandlers = {

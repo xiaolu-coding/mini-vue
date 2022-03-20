@@ -2,6 +2,7 @@ import { shallowReadonly } from "../reactivity/reactive"
 import { emit } from "./componentEmit"
 import { initProps } from "./componentProps"
 import { PublicInstanceProxyHandlers } from "./componentPublicInstance"
+import { initSlots } from "./componentSlots"
 
 // 创建组件实例对象
 export function createComponentInstance(vnode) {
@@ -10,6 +11,7 @@ export function createComponentInstance(vnode) {
     type: vnode.type, // 代理了一下
     setupState: {},
     props: {},   
+    slots: {},
     emit: () => {},
   }
   // 将emit函数赋值给组件实例的emit 将compoent作为第一个参数传过去
@@ -20,7 +22,9 @@ export function createComponentInstance(vnode) {
 export function setupComponent(instance) {
   // 初始化props，此时instance上有props
   initProps(instance, instance.vnode.props)
-  // initSlots()
+  // 初始化slots，此时instance上有slots 
+  // PublicInstanceProxyHandlers里就能拿到slots
+  initSlots(instance, instance.vnode.children)
 
   // 初始化setup 处理有状态的组件
   setupStatefulComponent(instance)
@@ -41,7 +45,7 @@ function setupStatefulComponent(instance: any) {
     // 传入浅只读的Props,可以在setup中得到这个参数
     // 传入emit
     const setupResult = setup(shallowReadonly(instance.props), {
-      emit: instance.emit
+      emit: instance.emit,
     })
     // 对结果判断，可能是函数可能是对象,object,function
     handleSetupResult(instance, setupResult)
