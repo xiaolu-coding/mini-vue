@@ -7,14 +7,22 @@ function createElement(type) {
   return document.createElement(type)
 }
 
-function patchProp(el, key, val) {
+function patchProp(el, key, prevVal, nextVal) {
   if (isOn(key)) {
     // 将on后面的转小写
     const event = key.slice(2).toLowerCase()
     // 添加事件
-    el.addEventListener(event, val)
+    el.addEventListener(event, nextVal)
+  } else {
+    // undefine和null的时候，就删除属性
+    if (nextVal === undefined || nextVal === null) {
+      el.removeAttribute(key)
+    } else {
+      el.setAttribute(key, nextVal)
+    }
+    
   }
-  el.setAttribute(key, val)
+  
 }
 
 function insert(el, container) {

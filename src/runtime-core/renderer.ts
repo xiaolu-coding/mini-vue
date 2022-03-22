@@ -3,6 +3,7 @@ import { ShapeFlags } from "../shared/ShapeFlags"
 import { Fragment, Text } from "./vnode"
 import { createAppAPI } from "./createApp"
 import { effect } from "../reactivity/effect"
+import { EMPTY_OBJ } from "../shared"
 
 export function createRenderer(options) {
   const {
@@ -83,7 +84,7 @@ export function createRenderer(options) {
     for (const key in props) {
       const val = props[key]
       // 处理prop
-      hostPatchProp(el, key, val)
+      hostPatchProp(el, key, null, val)
     }
     // 插入节点
     hostInsert(el, container)
@@ -107,8 +108,39 @@ export function createRenderer(options) {
     setupRenderEffect(instance, initialVnode, container)
   }
 
+
   function patchElement(n1, n2, container) {
     // update
+    const oldProps = n1.props || EMPTY_OBJ
+    const newProps = n2.props || EMPTY_OBJ
+    // el是存在Instance里的，给n2也复制一份，因为下一次更新n2就是n1了
+    const el = (n2.el = n1.el)
+    patchProps(el, oldProps, newProps)
+  }
+
+  function patchProps(el, oldProps, newProps) {
+    // 只有不一样才需要对比
+    if (oldProps !== newProps) {
+      // 遍历新props
+      for (const key in newProps) {
+        const prevProp = oldProps[key]
+        const nextProp = newProps[key]
+        // 如果不同，就修改
+        if (prevProp !== nextProp) {
+          hostPatchProp(el, key, prevProp, nextProp)
+        }
+      }
+      // 当不是空对象时，才要检测
+      if (oldProps !== EMPTY_OBJ) {
+        // 当老的props里的key不在新的props里，删除属性
+        for (const key in oldProps) {
+          if (!(key in newProps)) {
+            // 第四个参数为null时，删除
+            hostPatchProp(el, key, oldProps[key], null)
+          }
+        }
+      }
+    }
   }
 
   function setupRenderEffect(instance: any, initialVnode, container) {
@@ -120,7 +152,7 @@ export function createRenderer(options) {
         // 将this指向代理对象，因此this.msg可用 subTree复制一份以便后面更新的时候能取到
         const subTree = (instance.subTree = instance.render.call(proxy))
         // 再patch 初始化
-        patch(null,subTree, container, instance)
+        patch(null, subTree, container, instance)
         // 所有的element mount之后 这时候的subTree就是根组件了
         initialVnode.el = subTree.el
         // 初始化挂载后，为true，之后进来都是更新逻辑
