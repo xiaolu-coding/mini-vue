@@ -16,6 +16,8 @@ export function createComponentInstance(vnode, parent) {
     emit: () => {},
     parent, // 父组件
     provides: parent ? parent.provides : {}, // 存储provide的内容
+    isMounted: false,
+    subTree: {},   
   }
   // 将emit函数赋值给组件实例的emit 将compoent作为第一个参数传过去
   component.emit = emit.bind(null, component) as any
@@ -63,7 +65,7 @@ function setupStatefulComponent(instance: any) {
 }
 // 对结果判断，可能是函数可能是对象,object,function
 function handleSetupResult(instance, setupResult) {
-  // todo function
+  // todo function  
   if (typeof setupResult === "object") {
     // 做一层ref代理，可以通过this.count 直接获取到count.value的值
     instance.setupState = proxyRefs(setupResult)

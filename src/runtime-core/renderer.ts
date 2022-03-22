@@ -2,6 +2,7 @@ import { createComponentInstance, setupComponent } from "./component"
 import { ShapeFlags } from "../shared/ShapeFlags"
 import { Fragment, Text } from "./vnode"
 import { createAppAPI } from "./createApp"
+import { effect } from "../reactivity/effect"
 
 export function createRenderer(options) {
   const {
@@ -11,34 +12,34 @@ export function createRenderer(options) {
   } = options
   function render(vnode, container) {
     // 调用patch
-    patch(vnode, container, null)
+    patch(null, vnode, container, null)
   }
-  function patch(vnode, container, parentComponent) {
+  function patch(n1, n2, container, parentComponent) {
     // 结构出shapeFlag
-    const { type, shapeFlag } = vnode
+    const { type, shapeFlag } = n2
     // Fragment 只渲染children
     switch (type) {
       case Fragment:
-        processFragment(vnode, container, parentComponent)
+        processFragment(n1, n2, container, parentComponent)
         break
       case Text:
-        processText(vnode, container)
+        processText(n1, n2, container)
         break
       default:
         // 通过&运算查找，看看是否是ElEMENT类型
         if (shapeFlag & ShapeFlags.ELEMENT) {
           // 如果是element
-          processElement(vnode, container, parentComponent)
+          processElement(n1, n2, container, parentComponent)
         } else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
           // 通过&运算查找，看看是否是STATEFUL_COMPONENT类型
           // 处理组件
-          processComponent(vnode, container, parentComponent)
+          processComponent(n1, n2, container, parentComponent)
         }
         break
     }
   }
 
-  function processText(vnode, container) {
+  function processText(n1, vnode, container) {
     // 解构出children,此时的children就是text节点的文本内容
     const { children } = vnode
     // 元素记得复制一份给el，方便之后的diff
@@ -48,16 +49,21 @@ export function createRenderer(options) {
   }
 
   // 如果是Fragment，就直接去挂载孩子们，孩子们里面patch触发后面的process那些
-  function processFragment(vnode, container, parentComponent) {
-    mountChildren(vnode, container, parentComponent)
+  function processFragment(n1, n2, container, parentComponent) {
+    mountChildren(n2, container, parentComponent)
   }
 
-  function processComponent(vnode, container, parentComponent) {
-    mountComponent(vnode, container, parentComponent)
+  function processComponent(n1, n2, container, parentComponent) {
+    mountComponent(n2, container, parentComponent)
   }
 
-  function processElement(vnode, container, parentComponent) {
-    mountElement(vnode, container, parentComponent)
+  function processElement(n1, n2, container, parentComponent) {
+    // n1不存在时，是挂载初始化
+    if (!n1) {
+      mountElement(n2, container, parentComponent)
+    } else {
+      patchElement(n1, n2, container)
+    }
   }
 
   function mountElement(vnode, container, parentComponent) {
@@ -86,7 +92,7 @@ export function createRenderer(options) {
   function mountChildren(vnode, container, parentComponent) {
     //  循环挂载孩子
     vnode.children.forEach((v) => {
-      patch(v, container, parentComponent)
+      patch(null, v, container, parentComponent)
     })
   }
 
@@ -101,17 +107,36 @@ export function createRenderer(options) {
     setupRenderEffect(instance, initialVnode, container)
   }
 
-  function setupRenderEffect(instance: any, initialVnode, container) {
-    // 取出代理对象
-    const { proxy } = instance
-    // 调用render函数 subTree就是vnode树
-    // 将this指向代理对象，因此this.msg可用
-    const subTree = instance.render.call(proxy)
-    // 再patch递归
-    patch(subTree, container, instance)
+  function patchElement(n1, n2, container) {
+    // update
+  }
 
-    // 所有的element mount之后 这时候的subTree就是根组件了
-    initialVnode.el = subTree.el
+  function setupRenderEffect(instance: any, initialVnode, container) {
+    effect(() => {
+      if (!instance.isMounted) {
+        // 取出代理对象
+        const { proxy } = instance
+        // 调用render函数 subTree就是vnode树
+        // 将this指向代理对象，因此this.msg可用 subTree复制一份以便后面更新的时候能取到
+        const subTree = (instance.subTree = instance.render.call(proxy))
+        // 再patch 初始化
+        patch(null,subTree, container, instance)
+        // 所有的element mount之后 这时候的subTree就是根组件了
+        initialVnode.el = subTree.el
+        // 初始化挂载后，为true，之后进来都是更新逻辑
+        instance.isMounted = true
+      } else {
+        const { proxy } = instance
+        // 拿到当前的subTree
+        const subTree = instance.render.call(proxy)
+        // 拿到之前的subTree
+        const PrevSubTree = instance.subTree
+        // 把当前的subTree给之前的subTree，以便后来的更新
+        instance.subTree = subTree
+        // 更新
+        patch(PrevSubTree, subTree, container, instance)
+      }
+    })
   }
 
   return {
