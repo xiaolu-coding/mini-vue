@@ -24,22 +24,20 @@ export function inject(key, defaultValue?) {
   const currentInstance: any = getCurrentInstance()
   // 如果当前组件实例存在
   if (currentInstance) {
-    // 获取父组件的provides 
+    // 获取父组件的provides
     const parentProvides = currentInstance.parent.provides
     // 去parentProvides中查找key，原型链查找
-    if(key in parentProvides) {
+    if (key in parentProvides) {
       // 如果有就返回
       return parentProvides[key]
-    } else if(defaultValue) {
+    } else if (defaultValue) {
       // 处理默认值，当默认值是函数类型时，返回函数调用结果
-      if(typeof defaultValue === 'function') {
+      if (typeof defaultValue === "function") {
         return defaultValue()
       } else {
         // 直接返回默认值
         return defaultValue
       }
-       
     }
-    
   }
 }
