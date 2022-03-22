@@ -1,6 +1,7 @@
 import { createComponentInstance, setupComponent } from "./component"
 import { isOn } from "../shared/index"
 import { ShapeFlags } from "../shared/ShapeFlags"
+import { Fragment, Text } from "./vnode"
 
 export function render(vnode, container) {
   // 调用patch
@@ -9,16 +10,41 @@ export function render(vnode, container) {
 
 function patch(vnode, container) {
   // 结构出shapeFlag
-  const { shapeFlag } = vnode
-  // 通过&运算查找，看看是否是ElEMENT类型
-  if (shapeFlag & ShapeFlags.ELEMENT) {
-    // 如果是element
-    processElement(vnode, container)
-  } else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
-    // 通过&运算查找，看看是否是STATEFUL_COMPONENT类型
-    // 处理组件
-    processComponent(vnode, container)
+  const { type, shapeFlag } = vnode
+  // Fragment 只渲染children
+  switch (type) {
+    case Fragment:
+      processFragment(vnode, container)
+      break
+    case Text: 
+      processText(vnode, container)
+      break
+    default:
+      // 通过&运算查找，看看是否是ElEMENT类型
+      if (shapeFlag & ShapeFlags.ELEMENT) {
+        // 如果是element
+        processElement(vnode, container)
+      } else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
+        // 通过&运算查找，看看是否是STATEFUL_COMPONENT类型
+        // 处理组件
+        processComponent(vnode, container)
+      }
+      break
   }
+}
+
+function processText(vnode, container) {
+  // 解构出children,此时的children就是text节点的文本内容
+  const { children } = vnode
+  // 元素记得复制一份给el，方便之后的diff
+  const textNode = (vnode.el = document.createTextNode(children))
+  // 挂载
+  container.append(textNode)
+}
+
+// 如果是Fragment，就直接去挂载孩子们，孩子们里面patch触发后面的process那些
+function processFragment(vnode, container) {
+  mountChildren(vnode, container)
 }
 
 function processComponent(vnode, container) {

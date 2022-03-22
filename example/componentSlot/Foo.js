@@ -8,7 +8,7 @@ export const Foo = {
     const foo = h("p", {}, "foo")
 
     // Foo .vnode. children
-    console.log(this.$slots)
+    // console.log(this.$slots)
     // children -> vnode
     //
     // renderSlots
@@ -23,7 +23,7 @@ export const Foo = {
     return h(
       "div",
       {},
-      [
+      [  
         renderSlots(this.$slots, "header", {age}),
         foo,
         renderSlots(this.$slots, "footer"),
