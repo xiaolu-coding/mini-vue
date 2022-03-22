@@ -41,12 +41,16 @@ function setupStatefulComponent(instance: any) {
   const { setup } = component
   // 如果有setup
   if(setup) {
+    // 将instance传给全局变量currentInstance，以便getCurrentInstance在setup中获取到
+    setCurrentInstance(instance)
     // 调用setup，并将返回值给setupResult  
     // 传入浅只读的Props,可以在setup中得到这个参数
     // 传入emit
     const setupResult = setup(shallowReadonly(instance.props), {
       emit: instance.emit,
     })
+    // 调用完setup后 设为null
+    setCurrentInstance(null)
     // 对结果判断，可能是函数可能是对象,object,function
     handleSetupResult(instance, setupResult)
   }
@@ -67,4 +71,14 @@ function finishComponentSetup(instance) {
   // if(component.render) {
     instance.render = component.render
   // }
+}
+
+let currentInstance = null
+
+export function getCurrentInstance() {
+  return currentInstance
+}
+
+function setCurrentInstance(instance) {
+  currentInstance = instance
 }
