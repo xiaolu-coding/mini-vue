@@ -1,3 +1,4 @@
+import { proxyRefs } from "../reactivity"
 import { shallowReadonly } from "../reactivity/reactive"
 import { emit } from "./componentEmit"
 import { initProps } from "./componentProps"
@@ -64,7 +65,8 @@ function setupStatefulComponent(instance: any) {
 function handleSetupResult(instance, setupResult) {
   // todo function
   if (typeof setupResult === "object") {
-    instance.setupState = setupResult
+    // 做一层ref代理，可以通过this.count 直接获取到count.value的值
+    instance.setupState = proxyRefs(setupResult)
   }
   // 处理render函数的
   finishComponentSetup(instance)
