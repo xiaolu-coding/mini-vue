@@ -5,14 +5,16 @@ import { PublicInstanceProxyHandlers } from "./componentPublicInstance"
 import { initSlots } from "./componentSlots"
 
 // 创建组件实例对象
-export function createComponentInstance(vnode) {
+export function createComponentInstance(vnode, parent) {
   const component = {
     vnode,
     type: vnode.type, // 代理了一下
-    setupState: {},
-    props: {},   
+    setupState: {}, // setup内容
+    props: {},
     slots: {},
     emit: () => {},
+    parent, // 父组件
+    provides: parent ? parent.provides : {}, // 存储provide的内容
   }
   // 将emit函数赋值给组件实例的emit 将compoent作为第一个参数传过去
   component.emit = emit.bind(null, component) as any
@@ -22,7 +24,7 @@ export function createComponentInstance(vnode) {
 export function setupComponent(instance) {
   // 初始化props，此时instance上有props
   initProps(instance, instance.vnode.props)
-  // 初始化slots，此时instance上有slots 
+  // 初始化slots，此时instance上有slots
   // PublicInstanceProxyHandlers里就能拿到slots
   initSlots(instance, instance.vnode.children)
 
@@ -34,16 +36,19 @@ function setupStatefulComponent(instance: any) {
   // 通过实例的vnode获取type，type就是对象的内容
   const component = instance.type
   // ctx proxy代理对象，把instance传过去 PublicInstanceProxyHandlers
-  instance.proxy = new Proxy({
-    _: instance
-  }, PublicInstanceProxyHandlers)
+  instance.proxy = new Proxy(
+    {
+      _: instance,
+    },
+    PublicInstanceProxyHandlers
+  )
   // 解构出setup
   const { setup } = component
   // 如果有setup
-  if(setup) {
+  if (setup) {
     // 将instance传给全局变量currentInstance，以便getCurrentInstance在setup中获取到
     setCurrentInstance(instance)
-    // 调用setup，并将返回值给setupResult  
+    // 调用setup，并将返回值给setupResult
     // 传入浅只读的Props,可以在setup中得到这个参数
     // 传入emit
     const setupResult = setup(shallowReadonly(instance.props), {
@@ -58,18 +63,18 @@ function setupStatefulComponent(instance: any) {
 // 对结果判断，可能是函数可能是对象,object,function
 function handleSetupResult(instance, setupResult) {
   // todo function
-  if(typeof setupResult === 'object') {
+  if (typeof setupResult === "object") {
     instance.setupState = setupResult
   }
   // 处理render函数的
-  finishComponentSetup(instance) 
+  finishComponentSetup(instance)
 }
 
 function finishComponentSetup(instance) {
   const component = instance.type
 
   // if(component.render) {
-    instance.render = component.render
+  instance.render = component.render
   // }
 }
 
