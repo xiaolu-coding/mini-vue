@@ -3,7 +3,7 @@ import { extend } from "../shared/index"
 // 用来存放effect实例的全局变量
 let activeEffect
 // 用来判断是否收集依赖的全局变量
-let shouldTrack
+let shouldTrack = false
 
 export class reactiveEffect {
   private _fn: any

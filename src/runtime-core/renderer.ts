@@ -42,11 +42,11 @@ export function createRenderer(options) {
     }
   }
 
-  function processText(n1, vnode, container) {
+  function processText(n1, n2, container) {
     // 解构出children,此时的children就是text节点的文本内容
-    const { children } = vnode
+    const { children } = n2
     // 元素记得复制一份给el，方便之后的diff
-    const textNode = (vnode.el = document.createTextNode(children))
+    const textNode = (n2.el = document.createTextNode(children))
     // 挂载
     container.append(textNode)
   }
@@ -71,6 +71,7 @@ export function createRenderer(options) {
 
   function mountElement(vnode, container, parentComponent, anchor) {
     const { type, props, children, shapeFlag } = vnode
+
     // 将el存一份在vnode上，以便$el访问
     const el = (vnode.el = hostCreateElement(type))
     // children 可能是string ,array
@@ -127,7 +128,6 @@ export function createRenderer(options) {
     const newShpaeFlag = n2.shapeFlag
     const oldChildren = n1.children
     const newChildren = n2.children
-
     if (newShpaeFlag & ShapeFlags.TEXT_CHILDREN) {
       // 如果新的是文本类型 老的是数组类型，那么要卸载掉老的children，再text
       if (prevShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
@@ -204,7 +204,6 @@ export function createRenderer(options) {
     let i = 0 // i是指针，从左侧开始
     let e1 = c1.length - 1 // e1是c1的尾部
     let e2 = l2 - 1 // e2是c2的尾部
-
     function isSameNodeType(n1, n2) {
       // 判断是否相同节点，可以从type和key来判断
       return n1.type === n2.type && n1.key === n2.key
@@ -317,7 +316,7 @@ export function createRenderer(options) {
             moved = true
           }
           // 这时候的newIndex是和老节点相同的新节点的双端对比前索引值，newIndex-s2为双端对比后的索引值
-          newIndexToOldIndexMap[newIndex - s2] = i + 1 // i+1避免为0的情况，会误认为是没有对应的新节点
+          newIndexToOldIndexMap[newIndex - s2] = i + 1 // i+1避免为0的情况，为0时，是需要增加新节点
           // 如果这时候newIndex有值，代表老节点在新节点中有相同的，因此将对应的新老节点patch
           patch(prevChild, c2[newIndex], container, parentComponent, null)
           patched++
@@ -340,8 +339,11 @@ export function createRenderer(options) {
         const nextChild = c2[nextIndex]
         // 锚点，倒着向前插
         const anchor = nextIndex + 1 < l2 ? c2[nextIndex + 1].el : null
-        // 如果需要移动
-        if (moved) {
+        // 如果是0的话，代表老节点里没有，要新创建
+        if (newIndexToOldIndexMap[i] === 0) {
+          patch(null, nextChild, container, parentComponent, anchor)
+        } else if (moved) {
+          // 如果需要移动
           // j < 0，肯定不同了
           if (j < 0 || i !== increasingNewIndexSequence[j]) {
             // 如果不相同，插入
