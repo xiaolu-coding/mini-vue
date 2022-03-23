@@ -10,6 +10,8 @@ export function createRenderer(options) {
     createElement: hostCreateElement,
     patchProp: hostPatchProp,
     insert: hostInsert,
+    remove: hostRemove,
+    setElementText: hostSetElementText,
   } = options
   function render(vnode, container) {
     // 调用patch
@@ -51,7 +53,7 @@ export function createRenderer(options) {
 
   // 如果是Fragment，就直接去挂载孩子们，孩子们里面patch触发后面的process那些
   function processFragment(n1, n2, container, parentComponent) {
-    mountChildren(n2, container, parentComponent)
+    mountChildren(n2.children, container, parentComponent)
   }
 
   function processComponent(n1, n2, container, parentComponent) {
@@ -63,7 +65,7 @@ export function createRenderer(options) {
     if (!n1) {
       mountElement(n2, container, parentComponent)
     } else {
-      patchElement(n1, n2, container)
+      patchElement(n1, n2, container, parentComponent)
     }
   }
 
@@ -78,7 +80,7 @@ export function createRenderer(options) {
     } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
       // 通过&运算查找，如果是ARRAY_CHILDREN类型
       // 如果是数组 遍历数组，进行patch，此时容器为el
-      mountChildren(vnode, el, parentComponent)
+      mountChildren(vnode.children, el, parentComponent)
     }
     // 遍历设置属性 还要对里面的方法进行处理
     for (const key in props) {
@@ -90,9 +92,9 @@ export function createRenderer(options) {
     hostInsert(el, container)
   }
 
-  function mountChildren(vnode, container, parentComponent) {
+  function mountChildren(children, container, parentComponent) {
     //  循环挂载孩子
-    vnode.children.forEach((v) => {
+    children.forEach((v) => {
       patch(null, v, container, parentComponent)
     })
   }
@@ -108,14 +110,42 @@ export function createRenderer(options) {
     setupRenderEffect(instance, initialVnode, container)
   }
 
-
-  function patchElement(n1, n2, container) {
+  function patchElement(n1, n2, container, parentComponent) {
     // update
     const oldProps = n1.props || EMPTY_OBJ
     const newProps = n2.props || EMPTY_OBJ
     // el是存在Instance里的，给n2也复制一份，因为下一次更新n2就是n1了
     const el = (n2.el = n1.el)
+    // 更新孩子
+    patchChildren(n1, n2, el, parentComponent)
+    // 更新props属性
     patchProps(el, oldProps, newProps)
+  }
+
+  function patchChildren(n1, n2, container, parentComponent) {
+    const prevShapeFlag = n1.shapeFlag
+    const newShpaeFlag = n2.shapeFlag
+    const oldChildren = n1.children
+    const newChildren = n2.children
+
+    if (newShpaeFlag & ShapeFlags.TEXT_CHILDREN) {
+      // 如果新的是文本类型 老的是数组类型，那么要卸载掉老的children，再text
+      if (prevShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+        // 卸载老的children
+        ummountChildren(n1.children)
+      }
+      // 1. 新的文本类型，老的数组类型，卸载掉老的之后，oldChildren 肯定!== newChildren，所以会走这
+      // 2. 也有可能是两者都是文本类型，然后文本值不同，直接设置文本值
+      if (oldChildren !== newChildren) {
+        // 设置新的文本
+        hostSetElementText(container, newChildren)
+      }
+    } else {
+      if (prevShapeFlag & ShapeFlags.TEXT_CHILDREN) {
+        hostSetElementText(container, '')
+        mountChildren(newChildren, container, parentComponent)
+      }
+    }
   }
 
   function patchProps(el, oldProps, newProps) {
@@ -140,6 +170,15 @@ export function createRenderer(options) {
           }
         }
       }
+    }
+  }
+
+  function ummountChildren(children) {
+    for (let i = 0; i < children.length; i++) {
+      // 通过el拿到真实的dom元素，然后卸载
+      const el = children[i].el
+      // remove
+      hostRemove(el)
     }
   }
 
