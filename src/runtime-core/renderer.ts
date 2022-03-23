@@ -295,7 +295,7 @@ export function createRenderer(options) {
           newIndex = keyToNewIndexMap.get(prevChild.key)
         } else {
           // 没有key时，遍历
-          for (let j = s2; j < e2; j++) {
+          for (let j = s2; j <= e2; j++) {
             // 遍历查找新节点中是否有与老节点相同的节点
             if (isSameNodeType(prevChild, c2[j])) {
               newIndex = j
