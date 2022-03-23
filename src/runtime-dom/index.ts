@@ -25,8 +25,10 @@ function patchProp(el, key, prevVal, nextVal) {
   
 }
 
-function insert(el, container) {
-  container.append(el)
+function insert(child, parent, anchor) {
+  // container.append(el)
+  // 默认值为null，当不传anchor时，是默认插后面，传anchor时，插前面
+  parent.insertBefore(child, anchor || null)
 }
 
 function remove(child) {
