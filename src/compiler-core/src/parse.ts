@@ -9,29 +9,52 @@ export function baseParse(content: string) {
   // 转换为 context.source可以拿到content值
   const context = createParserContext(content)
   //
-  return createRoot(parseChildren(context))
+  return createRoot(parseChildren(context, []))
 }
 
-function parseChildren(context) {
+function parseChildren(context, ancestors) {
   const nodes: any = []
-  let node
+
+  while (!isEnd(context, ancestors)) {
+    let node
+    const s = context.source
+    // 判断是否是{{}}语法
+    if (s.startsWith("{{")) {
+      // 解析插值语法
+      node = parseInterpolation(context)
+    } else if (s[0] === "<") {
+      if (/[a-z]/i.test(s[1])) {
+        node = parseElement(context, ancestors)
+      }
+    }
+    // 如果node没有值，就是text
+    if (!node) {
+      node = parseText(context)
+    }
+    // 推进到nodes
+    nodes.push(node)
+  }
+  return nodes
+}
+
+function isEnd(context, ancestors) {
   const s = context.source
-  // 判断是否是{{}}语法
-  if (s.startsWith("{{")) {
-    // 解析插值语法
-    node = parseInterpolation(context)
-  } else if (s[0] === "<") {
-    if (/[a-z]/i.test(s[1])) {
-      node = parseElement(context)
+  // 2.当遇到结束标签的时候
+  if (s.startsWith("</")) {
+    // 从栈尾开始
+    for (let i = ancestors.length - 1; i >= 0; i--) {
+      const tag = ancestors[i].tag
+      // 如果标签对了，就true
+      if (startsWithEndTagOpen(s, tag)) {
+        return true
+      }
     }
   }
-  // 如果node没有值，就是text
-  if (!node) {
-    node = parseText(context)
-  }
-  // 推进到nodes
-  nodes.push(node)
-  return nodes
+  // if (parentTag && s.startsWith(`</${parentTag}>`)) {
+  //   return true
+  // }
+  // 1.source有值的时候。为true，没值的时候false结束
+  return !s
 }
 
 function parseInterpolation(context) {
@@ -62,12 +85,25 @@ function parseInterpolation(context) {
   }
 }
 
-function parseElement(context) {
-  const element = parseTag(context, TagType.Start)
-  parseTag(context, TagType.End)
-  console.log(context.source)
+function parseElement(context: any, ancestors) {
+  // 解析括号
+  const element: any = parseTag(context, TagType.Start)
+  // 栈收集标签
+  ancestors.push(element)
+  element.children = parseChildren(context, ancestors)
+  ancestors.pop()
+  if (startsWithEndTagOpen(context.source, element.tag)) {
+    // 解析结果的括号
+    parseTag(context, TagType.End)
+  } else {
+    throw new Error(`缺少结束标签:${element.tag}`)
+  }
 
   return element
+}
+
+function startsWithEndTagOpen(source, tag) {
+  return source.startsWith('</') && source.slice(2, 2 + tag.length).toLowerCase() === tag
 }
 
 function parseTag(context, type: TagType) {
@@ -86,8 +122,19 @@ function parseTag(context, type: TagType) {
 }
 
 function parseText(context: any) {
-  const content = parseTextData(context, context.source.length)
+  // 可能后面会遇到{{，或者直接到最后
+  let endIndex = context.source.length
+  let endTokens = ["<", "{{"]
 
+  for (let i = 0; i < endTokens.length; i++) {
+    const index = context.source.indexOf(endTokens[i])
+    if (index !== -1 && endIndex > index) {
+      endIndex = index
+    }
+  }
+
+  const content = parseTextData(context, endIndex)
+  console.log("content---------- ", content)
   return {
     type: NodeTypes.TEXT,
     content,
