@@ -5,6 +5,7 @@ import { createAppAPI } from "./createApp"
 import { effect } from "../reactivity/effect"
 import { EMPTY_OBJ } from "../shared"
 import { shouldUpdateComponent } from "./componentUpdateUtils"
+import { queueJobs } from "./scheduler"
 
 export function createRenderer(options) {
   const {
@@ -414,6 +415,12 @@ export function createRenderer(options) {
         instance.subTree = subTree
         // 更新
         patch(PrevSubTree, subTree, container, instance, anchor)
+      }
+    }, {
+      // 通过scheduler将instance.update加入异步队列，也就是上面的函数不是同步执行的了
+      scheduler() {
+        // 加入队列
+        queueJobs(instance.update)
       }
     })
   }
