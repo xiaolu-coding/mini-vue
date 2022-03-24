@@ -13,6 +13,7 @@ export function createComponentInstance(vnode, parent) {
     setupState: {}, // setup内容
     props: {},
     slots: {},
+    next: null, // 下次要更新的节点
     emit: () => {},
     parent, // 父组件
     provides: parent ? parent.provides : {}, // 存储provide的内容

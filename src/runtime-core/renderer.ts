@@ -4,6 +4,7 @@ import { Fragment, Text } from "./vnode"
 import { createAppAPI } from "./createApp"
 import { effect } from "../reactivity/effect"
 import { EMPTY_OBJ } from "../shared"
+import { shouldUpdateComponent } from "./componentUpdateUtils"
 
 export function createRenderer(options) {
   const {
@@ -57,7 +58,11 @@ export function createRenderer(options) {
   }
 
   function processComponent(n1, n2, container, parentComponent, anchor) {
-    mountComponent(n2, container, parentComponent, anchor)
+    if (!n1) {
+      mountComponent(n2, container, parentComponent, anchor)
+    } else {
+      updateComponent(n1, n2)
+    }
   }
 
   function processElement(n1, n2, container, parentComponent, anchor) {
@@ -104,11 +109,30 @@ export function createRenderer(options) {
     // 1. 创建组件实例，用以存储各种属性 createComponentInstance
     // 2. 初始化组件实例 setupComponent
     // 3. 副作用函数挂载 setupRenderEffect
-    const instance = createComponentInstance(initialVnode, parentComponent)
+    // 给虚拟节点也复制一份组件实例，为了在后面更新时拿到
+    const instance = (initialVnode.component = createComponentInstance(
+      initialVnode,
+      parentComponent
+    ))
     // 初始化组件实例
     setupComponent(instance)
 
     setupRenderEffect(instance, initialVnode, container, anchor)
+  }
+
+  function updateComponent(n1, n2) {
+    // 从n1取出组件实例赋值给n2和instance 因为n2是没有compoent的，但是n2之后又会作为老节点
+    const instance = (n2.component = n1.component)
+    if (shouldUpdateComponent(n1, n2)) {
+      // 存储新节点
+      instance.next = n2
+      // 执行runner方法，也就是调用传入的函数 也就是执行了组件的render函数
+      instance.update()
+    } else {
+      // 不需要更新的话，还是要保存el和vnode以便下次更新作为老节点使用
+      n2.el = n1.el
+      n2.vnode = n2
+    }
   }
 
   function patchElement(n1, n2, container, parentComponent, anchor) {
@@ -358,8 +382,10 @@ export function createRenderer(options) {
   }
 
   function setupRenderEffect(instance: any, initialVnode, container, anchor) {
-    effect(() => {
+    // effect会返回runner，由update接收，当再次调用update时，会继续调用传入的函数
+    instance.update = effect(() => {
       if (!instance.isMounted) {
+        console.log("init")
         // 取出代理对象
         const { proxy } = instance
         // 调用render函数 subTree就是vnode树
@@ -372,6 +398,13 @@ export function createRenderer(options) {
         // 初始化挂载后，为true，之后进来都是更新逻辑
         instance.isMounted = true
       } else {
+        console.log("update")
+        const { next, vnode } = instance
+        if (next) {
+          next.el = vnode.el
+          // 在更新之前，去改变组件实例上的props属性
+          updateComponentPreRender(instance, next)
+        }
         const { proxy } = instance
         // 拿到当前的subTree
         const subTree = instance.render.call(proxy)
@@ -384,11 +417,19 @@ export function createRenderer(options) {
       }
     })
   }
-
   return {
     // 为了传render函数给createApp使用
     createApp: createAppAPI(render),
   }
+}
+
+function updateComponentPreRender(instance, nextVnode) {
+  // 将新的节点作为下一次更新的老节点
+  instance.vnode = nextVnode
+  // 将新节点的next置为null
+  instance.next = null
+  // 赋值props
+  instance.props = nextVnode.props
 }
 
 function getSequence(arr) {
