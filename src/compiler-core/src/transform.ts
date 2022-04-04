@@ -1,10 +1,16 @@
 
-export function transform(root, options) {
+export function transform(root, options = {}) {
   // 全局上下文对象
   const context = createTransformContext(root, options)
   // 1、遍历 深度游侠搜索
   traverseNode(root, context)
   // 2、修改content
+
+  createRootCodegen(root)
+}
+
+function createRootCodegen(root) {
+  root.codegenNode = root.children[0]
 }
 
 function createTransformContext(root: any, options: any) {
