@@ -1,3 +1,5 @@
+import { NodeTypes } from "./ast"
+import { TO_DISPLAY_STRING } from "./runtimeHelpers"
 
 export function transform(root, options = {}) {
   // 全局上下文对象
@@ -7,9 +9,11 @@ export function transform(root, options = {}) {
   // 2、修改content
 
   createRootCodegen(root)
+
+  root.helpers = [...context.helpers.keys()]
 }
 
-function createRootCodegen(root) {
+function createRootCodegen(root: any) {
   root.codegenNode = root.children[0]
 }
 
@@ -17,7 +21,11 @@ function createTransformContext(root: any, options: any) {
   // 通过context存储外部传来的函数
   const context = {
     root,
-    nodeTransforms: options.nodeTransforms || []
+    nodeTransforms: options.nodeTransforms || [],
+    helpers: new Map(),
+    helper(key: any) {
+      context.helpers.set(key, 1)
+    },
   }
 
   return context
@@ -31,17 +39,26 @@ function traverseNode(node: any, context) {
     const transform = nodeTransforms[i]
     transform(node)
   }
-  traverseChildren(node, context)
+
+  switch (node.type) {
+    case NodeTypes.INTERPOLATION:
+      context.helper(TO_DISPLAY_STRING)
+      break
+    case NodeTypes.ROOT:
+    case NodeTypes.ELEMENT:
+      traverseChildren(node, context)
+      break
+    default:
+      break
+  }
 }
 
 function traverseChildren(node, context) {
   const children = node.children
   // 遍历树，深度优先搜索
-  if (children) {
-    for (let i = 0; i < children.length; i++) {
-      const node = children[i]
+  for (let i = 0; i < children.length; i++) {
+    const node = children[i]
 
-      traverseNode(node, context)
-    }
+    traverseNode(node, context)
   }
 }
