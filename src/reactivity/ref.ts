@@ -17,11 +17,13 @@ class RefImpl {
   }
   // get时收集依赖
   get value() {
+    console.log(`get value  ---- ${this._value} 这个值触发get `) 
     trackRefValue(this)
     return this._value
   }
 
   set value(newValue) {
+    console.log(`set value  ---- ${this._value} 变为 ${newValue} 时触发set`)
     // 判断值是否改变,如果值变了，才需要触发通知
     // 用保存的一份比较
     if (hasChanged(newValue, this._rawValue)) {
@@ -38,12 +40,14 @@ function convert(value) {
 }
 
 function trackRefValue(ref) {
+  console.log(`trackRefValue  ---- 要收集依赖的值: ${ref._value}`)
   if (isTracking()) {
     trackEffects(ref.dep)
   }
 }
 
 export function ref(value) {
+  console.log(`ref --- 为 ${value} 创建ref响应式对象`)
   return new RefImpl(value)
 }
 

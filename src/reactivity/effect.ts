@@ -52,6 +52,9 @@ function cleanupEffect(effect) {
 }
 
 export function isTracking() {
+  console.log(
+    `isTracking --- 判断是否需要收集依赖`
+  )
   // 是否需要收集依赖，stop里面的get set ++操作
   // if (!shouldTrack) return
   // 如果没有effect，就不需要收集
@@ -66,6 +69,7 @@ const targetMap = new WeakMap()
 export function track(target, key) {
   // 如果不是track中的状态，就返回
   if (!isTracking()) return
+  console.log("track")
   // 获取到target的depsMap 为map类型
   let depsMap = targetMap.get(target)
   // 初始化
@@ -86,6 +90,7 @@ export function track(target, key) {
 export function trackEffects(dep) {
   // 如果dep中已经有同样的effect 返回
   if (dep.has(activeEffect)) return
+  console.log('trackEffects ----- 收集依赖')
   // 添加依赖，activeEffect是全局变量保存的effect实例
   dep.add(activeEffect)
   // 挂载deps在effect实例上，以便在stop里面可以清除
@@ -97,14 +102,17 @@ export function triggerEffects(dep) {
   for (const effect of dep) {
     // 如果有scheduler，执行scheduler
     if (effect.scheduler) {
+      console.log("triggerEffects ----- 以scheduler方式触发依赖")
       effect.scheduler()
     } else {
+      console.log("triggerEffects ----- 以fun方式触发依赖")
       effect.run()
     }
   }
 }
 
 export function trigger(target, key) {
+  console.log('trigger')
   let depsMap = targetMap.get(target)
   let dep = depsMap.get(key)
   // 触发依赖
@@ -112,6 +120,7 @@ export function trigger(target, key) {
 }
 
 export function effect(fn, options: any = {}) {
+  console.log('effect  ------ 创建更新机制')
   // fn是函数
   const _effect = new reactiveEffect(fn, options.scheduler)
   // 通过Object.assign将otpions放进来
@@ -127,5 +136,6 @@ export function effect(fn, options: any = {}) {
 }
 
 export function stop(runner) {
+  console.log('effect stop  ------ 停止更新机制')
   runner.effect.stop()
 }

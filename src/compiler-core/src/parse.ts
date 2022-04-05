@@ -6,6 +6,7 @@ const enum TagType {
 }
 
 export function baseParse(content: string) {
+  console.log('parse ---- 将template转换为ast')
   // 转换为 context.source可以拿到content值
   const context = createParserContext(content)
   //
@@ -134,7 +135,6 @@ function parseText(context: any) {
   }
 
   const content = parseTextData(context, endIndex)
-  console.log("content---------- ", content)
   return {
     type: NodeTypes.TEXT,
     content,

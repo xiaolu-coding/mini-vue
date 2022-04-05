@@ -1,3 +1,4 @@
+import { isObject } from "../shared"
 import { ShapeFlags } from "../shared/ShapeFlags"
 
 export const Fragment = Symbol('Fragment')
@@ -9,6 +10,7 @@ export {
 
 // 创建vnode 这里的type就是app内部的对象
 export function createVNode(type, props?, children?) {
+  console.log(`createVNode  ----- 为 ${isObject(type) ? type.template : type} 创建vnode`)
   const vnode = {
     type,
     props,

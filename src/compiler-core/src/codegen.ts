@@ -7,6 +7,7 @@ import {
 } from "./runtimeHelpers"
 
 export function generate(ast: any) {
+  console.log('generate ----- 将vnode转换为render函数')
   const context = createCodegenContext()
   const { push } = context
 

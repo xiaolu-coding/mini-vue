@@ -2,6 +2,7 @@ import { NodeTypes } from "./ast"
 import { TO_DISPLAY_STRING } from "./runtimeHelpers"
 
 export function transform(root, options = {}) {
+  console.log('transform  ------ 将ast转换为vnode')
   // 全局上下文对象
   const context = createTransformContext(root, options)
   // 1、遍历 深度游侠搜索

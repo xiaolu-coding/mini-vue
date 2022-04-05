@@ -7,6 +7,7 @@ import { initSlots } from "./componentSlots"
 
 // 创建组件实例对象
 export function createComponentInstance(vnode, parent) {
+  console.log("createComponentInstance  --- 创建组件实例对象")
   const component = {
     vnode,
     type: vnode.type, // 代理了一下
@@ -26,6 +27,7 @@ export function createComponentInstance(vnode, parent) {
 }
 
 export function setupComponent(instance) {
+  console.log("setupComponent  --- 初始化组件实例")
   // 初始化props，此时instance上有props
   initProps(instance, instance.vnode.props)
   // 初始化slots，此时instance上有slots
@@ -37,9 +39,11 @@ export function setupComponent(instance) {
 }
 
 function setupStatefulComponent(instance: any) {
+  console.log("setupStatefulComponent ---- 执行setup方法")
   // 通过实例的vnode获取type，type就是对象的内容
   const component = instance.type
   // ctx proxy代理对象，把instance传过去 PublicInstanceProxyHandlers
+  console.log('创建实例的proxy代理对象')
   instance.proxy = new Proxy(
     {
       _: instance,
@@ -58,6 +62,7 @@ function setupStatefulComponent(instance: any) {
     const setupResult = setup(shallowReadonly(instance.props), {
       emit: instance.emit,
     })
+    console.log('调用了setup方法,返回值为: ', setupResult)
     // 调用完setup后 设为null
     setCurrentInstance(null)
     // 对结果判断，可能是函数可能是对象,object,function
@@ -66,6 +71,7 @@ function setupStatefulComponent(instance: any) {
 }
 // 对结果判断，可能是函数可能是对象,object,function
 function handleSetupResult(instance, setupResult) {
+  console.log("handleSetupResult --- 对setup方法的返回值做处理")
   // todo function  
   if (typeof setupResult === "object") {
     // 做一层ref代理，可以通过this.count 直接获取到count.value的值
@@ -76,6 +82,7 @@ function handleSetupResult(instance, setupResult) {
 }
 
 function finishComponentSetup(instance) {
+  console.log('finishComponentSetup --- 通过compile方法得到render函数(Vue3里面对Vue2做兼容处理:applyOptions)')
   const component = instance.type
 
   if (compiler && !component.render) {

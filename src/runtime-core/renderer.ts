@@ -8,6 +8,7 @@ import { shouldUpdateComponent } from "./componentUpdateUtils"
 import { queueJobs } from "./scheduler"
 
 export function createRenderer(options) {
+  console.log('createRenderer ------ 创建renderer渲染器对象')
   const {
     createElement: hostCreateElement,
     patchProp: hostPatchProp,
@@ -16,12 +17,15 @@ export function createRenderer(options) {
     setElementText: hostSetElementText,
   } = options
   function render(vnode, container) {
+    console.log('render ----- 调用render,触发patch')
     // 调用patch
     patch(null, vnode, container, null, null)
   }
   function patch(n1, n2, container, parentComponent, anchor) {
+    
     // 结构出shapeFlag
     const { type, shapeFlag } = n2
+    console.log('patch ----- 根据type类型选择相应的process方法, 此次类型为:', type)
     // Fragment 只渲染children
     switch (type) {
       case Fragment:
@@ -45,6 +49,7 @@ export function createRenderer(options) {
   }
 
   function processText(n1, n2, container) {
+    console.log('processText  ------ 处理text节点')
     // 解构出children,此时的children就是text节点的文本内容
     const { children } = n2
     // 元素记得复制一份给el，方便之后的diff
@@ -55,10 +60,12 @@ export function createRenderer(options) {
 
   // 如果是Fragment，就直接去挂载孩子们，孩子们里面patch触发后面的process那些
   function processFragment(n1, n2, container, parentComponent, anchor) {
+    console.log('processFragment ------ 处理Fragment节点')
     mountChildren(n2.children, container, parentComponent, anchor)
   }
 
   function processComponent(n1, n2, container, parentComponent, anchor) {
+    console.log('processComponent ----- 处理组件类型节点')
     if (!n1) {
       mountComponent(n2, container, parentComponent, anchor)
     } else {
@@ -67,6 +74,7 @@ export function createRenderer(options) {
   }
 
   function processElement(n1, n2, container, parentComponent, anchor) {
+    console.log('processElement ----- 处理标签类型节点')
     // n1不存在时，是挂载初始化
     if (!n1) {
       mountElement(n2, container, parentComponent, anchor)
@@ -76,6 +84,7 @@ export function createRenderer(options) {
   }
 
   function mountElement(vnode, container, parentComponent, anchor) {
+    console.log('mountElement ----- 挂载标签类型节点')
     const { type, props, children, shapeFlag } = vnode
 
     // 将el存一份在vnode上，以便$el访问
@@ -100,6 +109,7 @@ export function createRenderer(options) {
   }
 
   function mountChildren(children, container, parentComponent, anchor) {
+    console.log('mountChildren  ----- 挂载孩子们,其实就是对children执行patch')
     //  循环挂载孩子
     children.forEach((v) => {
       patch(null, v, container, parentComponent, anchor)
@@ -107,6 +117,7 @@ export function createRenderer(options) {
   }
 
   function mountComponent(initialVnode, container, parentComponent, anchor) {
+    console.log('mountComponent ------ 挂载组件类型')
     // 1. 创建组件实例，用以存储各种属性 createComponentInstance
     // 2. 初始化组件实例 setupComponent
     // 3. 副作用函数挂载 setupRenderEffect
@@ -122,6 +133,7 @@ export function createRenderer(options) {
   }
 
   function updateComponent(n1, n2) {
+    console.log('updateComponent ----- 更新组件')
     // 从n1取出组件实例赋值给n2和instance 因为n2是没有compoent的，但是n2之后又会作为老节点
     const instance = (n2.component = n1.component)
     if (shouldUpdateComponent(n1, n2)) {
@@ -137,6 +149,7 @@ export function createRenderer(options) {
   }
 
   function patchElement(n1, n2, container, parentComponent, anchor) {
+    console.log('patchElement   ----- 更新标签类型节点')
     // update
     const oldProps = n1.props || EMPTY_OBJ
     const newProps = n2.props || EMPTY_OBJ
@@ -149,6 +162,7 @@ export function createRenderer(options) {
   }
 
   function patchChildren(n1, n2, container, parentComponent, anchor) {
+    console.log('patchChildren ----- 更新孩子')
     const prevShapeFlag = n1.shapeFlag
     const newShpaeFlag = n2.shapeFlag
     const oldChildren = n1.children
@@ -185,6 +199,7 @@ export function createRenderer(options) {
   }
 
   function patchProps(el, oldProps, newProps) {
+    console.log('patchProps  ---- 更新属性')
     // 只有不一样才需要对比
     if (oldProps !== newProps) {
       // 遍历新props
@@ -210,6 +225,7 @@ export function createRenderer(options) {
   }
 
   function ummountChildren(children) {
+    console.log('ummountChildren')
     for (let i = 0; i < children.length; i++) {
       // 通过el拿到真实的dom元素，然后卸载
       const el = children[i].el
@@ -225,6 +241,7 @@ export function createRenderer(options) {
     parentComponent,
     parentAnchor
   ) {
+    console.log('patchKeyedChildren')
     const l2 = c2.length
     let i = 0 // i是指针，从左侧开始
     let e1 = c1.length - 1 // e1是c1的尾部
@@ -383,10 +400,11 @@ export function createRenderer(options) {
   }
 
   function setupRenderEffect(instance: any, initialVnode, container, anchor) {
+    console.log('setupRenderEffect ---- 创建更新函数，创建更新机制，视图更新')
     // effect会返回runner，由update接收，当再次调用update时，会继续调用传入的函数
     instance.update = effect(() => {
+      console.log('update ---- 执行update更新函数,首次视图更新')
       if (!instance.isMounted) {
-        console.log("init")
         // 取出代理对象
         const { proxy } = instance
         // 调用render函数 subTree就是vnode树
@@ -398,8 +416,8 @@ export function createRenderer(options) {
         initialVnode.el = subTree.el
         // 初始化挂载后，为true，之后进来都是更新逻辑
         instance.isMounted = true
+        console.log('首次挂载完毕')
       } else {
-        console.log("update")
         const { next, vnode } = instance
         if (next) {
           next.el = vnode.el
@@ -415,6 +433,7 @@ export function createRenderer(options) {
         instance.subTree = subTree
         // 更新
         patch(PrevSubTree, subTree, container, instance, anchor)
+        console.log("更新完毕")
       }
     }, {
       // 通过scheduler将instance.update加入异步队列，也就是上面的函数不是同步执行的了
@@ -431,6 +450,7 @@ export function createRenderer(options) {
 }
 
 function updateComponentPreRender(instance, nextVnode) {
+  console.log('updateComponentPreRender ---- 更新组件实例上的props属性')
   // 将新的节点作为下一次更新的老节点
   instance.vnode = nextVnode
   // 将新节点的next置为null

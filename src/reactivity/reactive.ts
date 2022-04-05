@@ -7,11 +7,13 @@ export const enum ReactiveFlags {
 }
 
 export function reactive(raw) {
+  console.log('reactive')
   // baseHanlders是get set对象
   return createReactiveObject(raw, mutableHandlers)
 }
 
 export function readonly(raw) {
+  console.log('readonly')
   return createReactiveObject(raw, readonlyHandlers)
 }
 
@@ -20,6 +22,7 @@ export function shallowReadonly(raw) {
 }
 
 function createReactiveObject(target, baseHandlers) {
+  console.log('createReactiveObject   ---- 创建响应式对象')
   // 如果不是对象
   if(!isObject(target)) {
     console.warn(`target ${target} 必须是一个对象`)

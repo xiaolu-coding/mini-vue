@@ -1,6 +1,7 @@
 import { ShapeFlags } from "../shared/ShapeFlags"
 
 export function initSlots(instance, children) {
+  console.log('initSlots ----- 初始化slots')
   // 解构vnode，判断是否是slot类型
   const { vnode } = instance
   if (vnode.shapeFlag & ShapeFlags.SLOT_CHILDREN) {
