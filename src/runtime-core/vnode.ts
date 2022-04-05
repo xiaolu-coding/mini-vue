@@ -3,6 +3,10 @@ import { ShapeFlags } from "../shared/ShapeFlags"
 export const Fragment = Symbol('Fragment')
 export const Text = Symbol('Text')
 
+export {
+  createVNode as createElementVNode
+}
+
 // 创建vnode 这里的type就是app内部的对象
 export function createVNode(type, props?, children?) {
   const vnode = {

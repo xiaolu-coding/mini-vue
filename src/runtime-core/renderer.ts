@@ -391,7 +391,7 @@ export function createRenderer(options) {
         const { proxy } = instance
         // 调用render函数 subTree就是vnode树
         // 将this指向代理对象，因此this.msg可用 subTree复制一份以便后面更新的时候能取到
-        const subTree = (instance.subTree = instance.render.call(proxy))
+        const subTree = (instance.subTree = instance.render.call(proxy, proxy))
         // 再patch 初始化
         patch(null, subTree, container, instance, anchor)
         // 所有的element mount之后 这时候的subTree就是根组件了
@@ -408,7 +408,7 @@ export function createRenderer(options) {
         }
         const { proxy } = instance
         // 拿到当前的subTree
-        const subTree = instance.render.call(proxy)
+        const subTree = instance.render.call(proxy, proxy)
         // 拿到之前的subTree
         const PrevSubTree = instance.subTree
         // 把当前的subTree给之前的subTree，以便后来的更新
